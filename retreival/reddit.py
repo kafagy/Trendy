@@ -6,6 +6,7 @@ import pymysql.cursors
 
 # at the beginning:
 start_time = time.time()
+connection = pymysql.connect(user='root', password='abc123', host='127.0.0.1', db='trendy', cursorclass=pymysql.cursors.DictCursor)
 
 chromeOptions = Options()
 chromeOptions.add_argument("--headless")
@@ -40,10 +41,18 @@ for comment in commentsNum:
         comments.append("0 comments")
         links.append(str(commentsLink))
 
+print(len(commentsNum))
 try:
-    for i in range(0, len(commentsNum)):
-       # print(str(thread[i].text) + " : " + str(hrefs[i]) + " : " + str(comments[i]) + " : " + str(links[i]))
-        print(str(thread[i].text) + " : " + str(comments[i]) + " : " + str(links[i]))
+    username = 'alibaba'
+    with connection.cursor() as cursor:
+        for i in range(0, len(commentsNum)):
+            # print(str(thread[i].text) + " : " + str(hrefs[i]) + " : " + str(comments[i]) + " : " + str(links[i]))
+            print(str(thread[i].text) + " : " + str(comments[i]) + " : " + str(links[i]))
+            sql = "INSERT INTO trendy.reddit(id, username, thread, link, loadtime) VALUES (DEFAULT, %s, %s, %s, %s, NOW())"
+            cursor.execute(sql, (username, thread[i].text, comments[i], links[i]))
+        connection.commit()
+
+
 except:
     pass
 

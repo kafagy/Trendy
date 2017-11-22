@@ -11,7 +11,7 @@ start_time = time.time()
 connection = pymysql.connect(user='root', password='abc123', host='127.0.0.1', db='trendy', cursorclass=pymysql.cursors.DictCursor)
 
 chromeOptions = Options()
-chromeOptions.add_argument("--headless")
+#chromeOptions.add_argument("--headless")
 chromeOptions.add_experimental_option('prefs', {'geolocation': True})
 driver = webdriver.Chrome(chrome_options=chromeOptions)
 wait = WebDriverWait(driver, 30)
@@ -50,8 +50,9 @@ username = 'alibaba'
 with connection.cursor() as cursor:
     for i in range(0, len(links)):
         print(trends[i] + " : " + links[i])
-        sql = "INSERT INTO `twitter` (`id`, `user`, `trend`, `link`, `loadtime`) VALUES (DEFAULT, %s, %s, %s, NOW())"
+        sql = "INSERT INTO trendy.twitter(id, username, trend, link, loadtime) VALUES (DEFAULT, %s, %s, %s, NOW())"
         cursor.execute(sql, (username, trends[i], links[i]))
+    connection.commit()
 
 # At the end of the program:
 print("Retrieval time took %f seconds" % (time.time() - start_time))

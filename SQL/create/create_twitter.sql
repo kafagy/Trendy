@@ -2,11 +2,11 @@ DROP TABLE twitter;
 
 CREATE TABLE IF NOT EXISTS twitter(
   id INT PRIMARY KEY AUTO_INCREMENT,
-  user VARCHAR(30),
+  username VARCHAR(30),
   trend VARCHAR(100),
   link VARCHAR(300),
   loadtime TIMESTAMP,
-  FOREIGN KEY (user) REFERENCES users(username)
+  FOREIGN KEY (username) REFERENCES users(username)
 );
 
 TRUNCATE TABLE twitter;

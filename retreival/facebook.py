@@ -1,4 +1,4 @@
-import time
+import time, pymysql.cursors
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
@@ -7,6 +7,10 @@ from selenium.webdriver.support import expected_conditions as EC
 
 # at the beginning:
 start_time = time.time()
+connection = pymysql.connect(user='root', password='abc123', host='127.0.0.1', db='trendy', cursorclass=pymysql.cursors.DictCursor, use_unicode=True, charset="utf8mb4")
+with connection.cursor() as cursor:
+    cursor.execute("TRUNCATE TABLE facebook;")
+connection.commit()
 
 chromeOptions = Options()
 chromeOptions.add_argument("--headless")
@@ -29,21 +33,20 @@ try:
     if not notNowNotifcation is None:
         notNowNotifcation.click()
 except:
-    pass
+    print("Couldn't click the SeeMore button!")
 
 # Clicks on the seemore buton
-wait.until(EC.visibility_of_element_located((By.ID, 'u_ps_0_4_j')))
-driver.find_element_by_id('u_ps_0_4_j').click()
+wait.until(EC.visibility_of_element_located((By.XPATH, '//a[@data-position="seemore"]')))
+driver.find_element_by_xpath('//a[@data-position="seemore"]').click()
 time.sleep(3)
 
+# Trends
 headlines = []
-wait.until(EC.presence_of_all_elements_located((By.XPATH, '//span[@class="_3-9y"]')))
-spans = driver.find_elements_by_xpath('//span[@class="_3-9y"]')
-for span in spans:
-    trends = str(str(span.text).split('\n')[0:])
+wait.until(EC.presence_of_all_elements_located((By.XPATH, '//a[starts-with(@data-hovercard, "/pubcontent/trending/hovercard/?topic_id=")]')))
+retrieved = driver.find_elements_by_xpath('//a[starts-with(@data-hovercard, "/pubcontent/trending/hovercard/?topic_id=")]')
+for i in retrieved:
+    trends = str(i.find_element_by_tag_name('div').text).split('\n')[0]
     headlines.append(trends)
-
-print(headlines)
 
 # Trends Links
 links = []
@@ -52,8 +55,17 @@ hrefs = driver.find_elements_by_xpath('//a[starts-with(@href, "/topic")]')
 for href in hrefs:
     links.append(href.get_attribute('href'))
 
-for num in range(0, 10):
-    print(headlines[num] + " : " + links[num])
+for num in range(0, 9):
+        print(headlines[num] + " : " + links[num])
+
+username = 'alibaba'
+with connection.cursor() as cursor:
+    for num in range(0, 9):
+        print(headlines[num] + " : " + links[num])
+        sql = "INSERT INTO trendy.facebook(id, username, trend, link, loadtime) VALUES (DEFAULT, %s, %s, %s, NOW())"
+        cursor.execute(sql, (username, headlines[num], links[num]))
+    connection.commit()
+
 
 # At the end of the program:
 print("Retrieval time took %f seconds" % (time.time() - start_time))

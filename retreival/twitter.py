@@ -1,17 +1,19 @@
-import time
+import time, pymysql.cursors
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import pymysql.cursors
 
 # at the beginning:
 start_time = time.time()
 connection = pymysql.connect(user='root', password='abc123', host='127.0.0.1', db='trendy', cursorclass=pymysql.cursors.DictCursor)
+with connection.cursor() as cursor:
+    cursor.execute("TRUNCATE TABLE twitter;")
+connection.commit()
 
 chromeOptions = Options()
-#chromeOptions.add_argument("--headless")
+chromeOptions.add_argument("--headless")
 chromeOptions.add_experimental_option('prefs', {'geolocation': True})
 driver = webdriver.Chrome(chrome_options=chromeOptions)
 wait = WebDriverWait(driver, 30)
@@ -45,6 +47,9 @@ wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, '.pretty-link.j
 hrefs = driver.find_elements_by_css_selector('.pretty-link.js-nav.js-tooltip.u-linkComplex')
 for href in hrefs:
     links.append(href.get_attribute('href'))
+
+for i in range(0, len(links)):
+    print(trends[i] + " : " + links[i])
 
 username = 'alibaba'
 with connection.cursor() as cursor:

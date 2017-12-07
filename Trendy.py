@@ -1,6 +1,16 @@
+import time, sys, subprocess
 from flaskext.mysql import MySQL
 from flask import Flask, render_template, json, request, session, redirect
 from werkzeug import generate_password_hash, check_password_hash
+
+# TODO Fix username variables email inside sign in and out
+# TODO Change inside the retreival script the "delete" statements and use instead "update" statements
+# TODO Use a loading bar when waiting for the retrival processes to finish
+# TODO SQL getting no results after retreival
+# TODO Quit the chrome browser if retreival has no errors
+# TODO Clean Trendy code
+# TODO Add subreddit link column to reddit table
+# TODO Create an ETL script
 
 mysql = MySQL()
 app = Flask(__name__)
@@ -21,10 +31,50 @@ def main():
 
 @app.route('/userHome')
 def userHome():
-    if session.get('user'):
-        return render_template('userHome.html')
+    conn = mysql.connect()
+    cursor = conn.cursor()
+
+    sql = "SELECT username FROM users WHERE email = %s"
+    cursor.execute(sql, useremail)
+    username = cursor.fetchone()[0]
+    print(username)
+
+    procT = subprocess.Popen([sys.executable, '/Users/kafagy/PycharmProjects/Trendy/retreival/twitter.py', username])
+    procF = subprocess.Popen([sys.executable, '/Users/kafagy/PycharmProjects/Trendy/retreival/facebook.py', username])
+    procR = subprocess.Popen([sys.executable, '/Users/kafagy/PycharmProjects/Trendy/retreival/reddit.py', username])
+
+    procT.wait()
+    procF.wait()
+    procR.wait()
+
+    sql = "SELECT trend, link FROM twitter INNER JOIN users u ON twitter.username = u.username WHERE twitter.username = %s"
+    cursor.execute(sql, username)
+    twitter = cursor.fetchall()
+    if not cursor.rowcount:
+        print("No results found")
     else:
-        return render_template('error.html',error = 'Unauthorized Access')
+        print(twitter)
+
+    sql = "SELECT trend, link , content FROM facebook INNER JOIN users u ON facebook.username = u.username WHERE facebook.username = %s"
+    cursor.execute(sql, username)
+    facebook = cursor.fetchall()
+    if not cursor.rowcount:
+        print("No results found")
+    else:
+        print(facebook)
+
+    sql = "SELECT thread, link, comment, href FROM reddit INNER JOIN users u ON reddit.username = u.username WHERE reddit.username = %s"
+    cursor.execute(sql, username)
+    reddit = cursor.fetchall()
+    if not cursor.rowcount:
+        print("No results found")
+    else:
+        print(reddit)
+
+    if session.get('user'):
+        return render_template('userHome.html', twitter=twitter, facebook=facebook, reddit=reddit)
+    else:
+        return render_template('error.html', error='Unauthorized Access')
 
 
 @app.route('/showSignUp')
@@ -34,21 +84,21 @@ def showSignUp():
 
 @app.route('/signUp', methods=['POST', 'GET'])
 def signUp():
-    global cursor, conn
+    global useremail
     try:
         _name = request.form['inputName']
         _email = request.form['inputEmail']
+        useremail = _email
         _password = request.form['inputPassword']
-        # validate the received values
         if _name and _email and _password:
             conn = mysql.connect()
             cursor = conn.cursor()
             _hashed_password = generate_password_hash(_password)
             cursor.callproc('sp_createUser', (_name, _email, _hashed_password))
             data = cursor.fetchall()
-            print(data)
             if len(data) is 0:
                 conn.commit()
+                redirect('/userHome')
                 return json.dumps({'message': 'User created successfully !'})
             else:
                 return json.dumps({'error': str(data[0])})
@@ -67,26 +117,26 @@ def showSignin():
 
 
 @app.route('/signIn', methods=['POST'])
-def validateLogin():
-    global cursor, con
+def signIn():
+    global useremail
     try:
         _username = request.form['inputEmail']
         _password = request.form['inputPassword']
+        useremail = _username
         con = mysql.connect()
         cursor = con.cursor()
         cursor.callproc('sp_validateLogin', (_username,))
         data = cursor.fetchall()
+        print("username: ", data)
         if len(data) > 0:
             if check_password_hash(str(data[0][2]), _password):
                 session['user'] = data[0][0]
-                print("a7a")
                 return redirect('/userHome')
             else:
                 return render_template('error.html', error='Wrong Email address or Password.')
         else:
             return render_template('error.html', error='Wrong Email address or Password.')
     except Exception as e:
-        print("Ssisi")
         return render_template('error.html', error=str(e))
     finally:
         cursor.close()
@@ -95,7 +145,7 @@ def validateLogin():
 
 @app.route('/logout')
 def logout():
-    session.pop('user',None)
+    session.pop('user', None)
     return redirect('/')
 
 

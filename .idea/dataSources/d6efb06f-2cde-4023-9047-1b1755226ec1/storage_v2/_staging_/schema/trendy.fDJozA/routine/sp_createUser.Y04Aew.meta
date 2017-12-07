@@ -1,0 +1,2 @@
+#n:sp_createUser
+#i:(varchar(20),varchar(20),varchar(100))

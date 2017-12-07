@@ -1,4 +1,4 @@
-import time, pymysql.cursors
+import time, pymysql.cursors, sys
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
@@ -7,11 +7,7 @@ from selenium.webdriver.support import expected_conditions as EC
 
 # at the beginning:
 start_time = time.time()
-connection = pymysql.connect(user='root', password='abc123', host='127.0.0.1', db='trendy',
-                             cursorclass=pymysql.cursors.DictCursor, use_unicode=True, charset="utf8mb4")
-with connection.cursor() as cursor:
-    cursor.execute("TRUNCATE TABLE facebook;")
-connection.commit()
+connection = pymysql.connect(user='root', password='abc123', host='127.0.0.1', db='trendy', cursorclass=pymysql.cursors.DictCursor, use_unicode=True, charset="utf8mb4")
 
 chromeOptions = Options()
 chromeOptions.add_argument("--headless")
@@ -62,14 +58,25 @@ hrefs = driver.find_elements_by_xpath('//a[starts-with(@href, "/topic")]')
 for href in hrefs:
     links.append(href.get_attribute('href'))
 
-username = 'alibaba'
+username = sys.argv[1]
 with connection.cursor() as cursor:
-    for num in range(0, len(headlines)):
-        print(headlines[num] + " : " + texts[num] + " : " + links[num])
-        sql = "INSERT INTO trendy.facebook(id, username, trend, content, link, loadtime) VALUES (DEFAULT, %s, %s, %s, %s, NOW())"
-        cursor.execute(sql, (username, headlines[num], texts[num], links[num]))
-    connection.commit()
+    cursor.execute("SELECT * FROM trendy.facebook WHERE username = %s", username)
+    if cursor.rowcount == 0:
+        for num in range(0, len(headlines)):
+            print(headlines[num] + " : " + texts[num] + " : " + links[num])
+            sql = "INSERT INTO trendy.facebook(id, username, trend, content, link, loadtime) VALUES (DEFAULT, %s, %s, %s, %s, NOW())"
+            cursor.execute(sql, (username, headlines[num], texts[num], links[num]))
+        connection.commit()
+    elif cursor.rowcount == 10:
+        cursor.execute("DELETE FROM trendy.facebook WHERE username = %s", username)
+        for num in range(0, len(headlines)):
+            print(headlines[num] + " : " + texts[num] + " : " + links[num])
+            sql = "INSERT INTO trendy.facebook(id, username, trend, content, link, loadtime) VALUES (DEFAULT, %s, %s, %s, %s, NOW())"
+            cursor.execute(sql, (username, headlines[num], texts[num], links[num]))
+        connection.commit()
+
 
 # At the end of the program:
+connection.close()
 driver.quit()
 print("Retrieval time took %f seconds" % (time.time() - start_time))

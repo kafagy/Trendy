@@ -1,4 +1,4 @@
-import time, pymysql.cursors
+import time, pymysql.cursors, sys
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
@@ -8,9 +8,6 @@ from selenium.webdriver.support import expected_conditions as EC
 # at the beginning:
 start_time = time.time()
 connection = pymysql.connect(user='root', password='abc123', host='127.0.0.1', db='trendy', cursorclass=pymysql.cursors.DictCursor, use_unicode=True, charset="utf8mb4")
-with connection.cursor() as cursor:
-    cursor.execute("TRUNCATE TABLE reddit;")
-connection.commit()
 
 chromeOptions = Options()
 chromeOptions.add_argument("--headless")
@@ -45,14 +42,25 @@ for comment in commentsNum:
         comments.append("0 comments")
         links.append(str(commentsLink))
 
-
-username = 'alibaba'
+username = sys.argv[1]
 with connection.cursor() as cursor:
-    for i in range(0, len(commentsNum)):
-        print(str(thread[i].text) + " : " + str(hrefs[i]) + " : " + str(comments[i]) + " : " + str(links[i]))
-        sql = "INSERT INTO trendy.reddit(id, username, thread, href, comment, link, loadtime) VALUES (DEFAULT, %s, %s, %s, %s, %s, NOW())"
-        cursor.execute(sql, (username, thread[i].text, hrefs[i], comments[i], links[i]))
-    connection.commit()
+    cursor.execute("SELECT * FROM trendy.reddit WHERE username = %s", username)
+    if cursor.rowcount == 0:
+        for i in range(0, len(commentsNum)):
+            print(str(thread[i].text) + " : " + str(hrefs[i]) + " : " + str(comments[i]) + " : " + str(links[i]))
+            sql = "INSERT INTO trendy.reddit(id, username, thread, href, comment, link, loadtime) VALUES (DEFAULT, %s, %s, %s, %s, %s, NOW())"
+            cursor.execute(sql, (username, thread[i].text, hrefs[i], comments[i], links[i]))
+        connection.commit()
+    elif cursor.rowcount == 10:
+        cursor.execute("DELETE FROM trendy.reddit WHERE username = %s", username)
+        for i in range(0, len(commentsNum)):
+            print(str(thread[i].text) + " : " + str(hrefs[i]) + " : " + str(comments[i]) + " : " + str(links[i]))
+            sql = "INSERT INTO trendy.reddit(id, username, thread, href, comment, link, loadtime) VALUES (DEFAULT, %s, %s, %s, %s, %s, NOW())"
+            cursor.execute(sql, (username, thread[i].text, hrefs[i], comments[i], links[i]))
+        connection.commit()
+
 
 # At the end of the program:
+connection.close()
+driver.quit()
 print("Retrieval time took %f seconds" % (time.time() - start_time))

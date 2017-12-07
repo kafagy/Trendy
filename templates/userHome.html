@@ -7,21 +7,63 @@
     <link href="../static/css/signup.css" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <nav>
-                <ul class="nav nav-pills pull-right">
-                    <li role="presentation" class="active"><a href="/logout">Logout</a></li>
-                </ul>
-            </nav>
-            <h3 class="text-muted">Python Flask App</h3>
-        </div>
-        <div class="jumbotron">
-            <h1>Welcome Home !!</h1>
-        </div>
-        <footer class="footer">
-            <p>&copy; Company 2015</p>
-        </footer>
+<div class="header">
+    <nav>
+        <ul class="nav nav-pills pull-right">
+            <li role="presentation" class="active"><a href="/logout">Logout</a></li>
+        </ul>
+    </nav>
+    <h3 class="text-muted">Python Flask App</h3>
+</div>
+<div id="the whole thing" style="float:left; height:100%; width:100%">
+    <div id="leftThing" style="float:left; width:25%;">
+        <img src="https://www.shareicon.net/twitter-social-media-social-tweet-twitter-bird-media-network-876002/data/256x256/2017/01/24/876002_media_512x512.png">
+        <h1> Twitter trends </h1>
+        <table>
+            <tbody>
+            {% for trend in twitter %}
+                <tr>
+                    <li><a href="{{ trend.1 }}">{{ trend.0 }}</a></li>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
     </div>
+    <div id="content" style="float:left; width:25%;">
+        <img src="http://downloadicons.net/sites/default/files/facebook-logo-icon-65850.png">
+        <h1> Facebook trends </h1>
+        <table>
+            <tbody>
+            {% for trend in facebook %}
+                <tr>
+                    <li>
+                        <a href="{{ trend.1 }}">{{ trend.0 }}</a>
+                        <p> {{ trend.2 }} </p>
+                    </li>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div id="rightThing" style="float:left; width:25%;">
+        <img src="https://www.shareicon.net/data/256x256/2016/07/13/606926_reddit_4096x4096.png">
+        <h1> Reddit trends </h1>
+        <table>
+            <tbody>
+            {% for trend in reddit %}
+                <tr>
+                    <li>
+                        <a href="{{ trend.1 }}">{{ trend.0 }}</a>
+                        <p> {{ trend.3 }} {{ trend.2 }} </p>
+                    </li>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<footer class="footer">
+    <p>&copy; Ali Kafagy 2017</p>
+</footer>
 </body>
 </html>
